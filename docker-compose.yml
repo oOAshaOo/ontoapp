@@ -1,0 +1,67 @@
+services:
+  backend:
+    build:
+      context: ./backend/app
+      dockerfile: Dockerfile
+    environment:
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      SECRET_KEY: ${SECRET_KEY}
+      ACCESS_TOKEN_EXPIRATION_MINUTES: ${ACCESS_TOKEN_EXPIRATION_MINUTES}
+      REFRESH_TOKEN_EXPIRATION_MINUTES: ${REFRESH_TOKEN_EXPIRATION_MINUTES}
+      TZ: ${TIMEZONE}
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+    networks:
+      - api_bridge
+
+  frontend:
+    build:
+      context: ./frontend/ui
+      dockerfile: Dockerfile
+    ports:
+      - 4173:4173
+    depends_on:
+      - db
+    networks:
+      - api_bridge
+
+  db:
+    build:
+      context: ./backend/db
+      dockerfile: Dockerfile
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ontoapp_database
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      TZ: ${TIMEZONE}
+    networks:
+      - api_bridge
+    volumes:
+      - ontoapp_database:/var/lib/mysql
+
+  phpmyadmin:
+    build:
+      context: ./backend/phpmyadmin
+      dockerfile: Dockerfile
+    environment:
+      PMA_HOST: db
+      PMA_USER: ${MARIADB_USER}
+      PMA_PASSWORD: ${MARIADB_PASSWORD}
+      TZ: ${TIMEZONE}
+    ports:
+      - 80:80
+    depends_on:
+      - db
+    networks:
+      - api_bridge
+
+networks:
+  api_bridge:
+    driver: bridge
+
+volumes:
+  ontoapp_database:
